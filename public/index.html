@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2F5D3F" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Wild Portfolio" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+<title>Wild Portfolio</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #EFE9D8; color: #2B2620; }
+  .sans { font-family: -apple-system, Helvetica, Arial, sans-serif; }
+  .btn { border: none; cursor: pointer; border-radius: 6px; padding: 7px 11px; font-size: 12px; font-weight: 600; color: #fff; font-family: -apple-system, Helvetica, Arial, sans-serif; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+  #topbar { flex: 0 0 auto; background: #2F5D3F; color: #F3EFDD; padding: 8px 10px; display: flex; align-items: center; gap: 6px; }
+  #topbar .title { font-size: 14px; font-weight: 700; margin-right: 4px; white-space: nowrap; }
+  .pill { border-radius: 7px; padding: 5px 8px; font-size: 11.5px; font-weight: 600; font-family: sans-serif; white-space: nowrap; }
+  .pill.plant { background: #DCE7CB; border: 1px solid #B7C79E; color: #3E5228; }
+  .pill.meat { background: #EBD4C4; border: 1px solid #D3AC93; color: #7A3B1E; }
+  .pill.legacy { background: #E4D9F0; border: 1px solid #C6AEDB; color: #4A2E63; }
+  .infoBtn { background: rgba(255,255,255,0.18); color:#fff; margin-left: auto; padding: 5px 8px; font-size: 11px; }
+
+  #screens { flex: 1 1 auto; position: relative; min-height: 0; }
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* MAP */
+  #canvasWrap { flex: 1 1 auto; position: relative; touch-action: none; background: #3E6B3E; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #mapLog { position: absolute; left: 8px; right: 8px; bottom: 8px; background: rgba(20,18,14,0.6); color: #F3EFDD; border-radius: 8px; padding: 7px 10px; font-family: sans-serif; font-size: 11px; line-height: 1.5; max-height: 60px; overflow: hidden; pointer-events: none; }
+  #mapLog div:not(:first-child) { opacity: 0.55; }
+  #mapHint { position: absolute; top: 8px; left: 8px; right: 8px; text-align: center; font-family: sans-serif; font-size: 10.5px; color: rgba(255,255,255,0.85); background: rgba(20,18,14,0.35); border-radius: 6px; padding: 4px 8px; pointer-events: none; }
+
+  .interact-prompt { position: absolute; left: 12px; right: 12px; bottom: 84px; background: rgba(246,241,225,0.98); border: 1px solid #D6CBA8; border-radius: 12px; padding: 13px; font-family: sans-serif; box-shadow: 0 4px 18px rgba(0,0,0,0.3); z-index: 20; display: none; flex-direction: column; gap: 9px; align-items: center; text-align: center; }
+  .interact-prompt .prompt-text { font-size: 14px; font-weight: 700; color: #2B2620; }
+  .interact-actions { display: flex; gap: 8px; width: 100%; }
+  .interact-actions .btn { flex: 1; padding: 10px; font-size: 13px; }
+
+  /* CAPTIVITY */
+  #screen-captivity { background: #EFE9D8; }
+  .tabbar { flex: 0 0 auto; display: flex; border-bottom: 1px solid #D6CBA8; }
+  .tabbtn { flex: 1; padding: 11px; text-align: center; font-family: sans-serif; font-size: 12.5px; font-weight: 700; background: #E4DCC4; border: none; color: #7A7460; cursor: pointer; }
+  .tabbtn.active { background: #EFE9D8; color: #2B2620; border-bottom: 2px solid #2F5D3F; }
+  .tabcontent { flex: 1 1 auto; position: relative; min-height: 0; }
+  .tabpane { position: absolute; inset: 0; overflow-y: auto; display: none; padding: 10px 12px 20px; }
+  .tabpane.active { display: block; }
+
+  /* ZOO */
+  #screen-zoo { overflow-y: auto; padding: 10px 12px 20px; }
+
+  .section-label { font-family: sans-serif; font-size: 11px; color: #5C5646; text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px; }
+  .section-label:first-child { margin-top: 2px; }
+  .empty-note { font-family: sans-serif; font-size: 13px; color: #7A7460; font-style: italic; }
+  .card { background: #F6F1E1; border: 1px solid #D6CBA8; border-left-width: 5px; border-radius: 10px; padding: 10px; font-family: sans-serif; margin-bottom: 8px; }
+  .cage { border: 1px dashed #C9BE9E; border-radius: 8px; padding: 8px 10px; font-family: sans-serif; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; min-height: 20px; }
+  .cage.filled { border-style: solid; background: #F6F1E1; border-left-width: 5px; }
+  .cage.empty { color: #9A9482; font-style: italic; font-size: 12px; }
+  .cage.locked { color: #B0A98F; font-size: 12px; background: repeating-linear-gradient(45deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 6px, rgba(0,0,0,0.05) 6px, rgba(0,0,0,0.05) 12px); }
+  .card-top { display: flex; align-items: center; gap: 8px; }
+  .card-icon { font-size: 20px; }
+  .card-name { font-weight: 700; font-size: 14px; }
+  .tag { font-size: 9px; background: #C9622C; color: #fff; border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+  .zootag { font-size: 9px; background: #5C6B9F; color: #fff; border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+  .card-meta { font-size: 10.5px; color: #7A7460; text-transform: capitalize; }
+  .stat-label { margin-top: 8px; font-size: 10.5px; color: #5C5646; }
+  .bar-bg { background: #E4DCC4; border-radius: 4px; height: 6px; margin-top: 2px; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .earned { color: #3E5228; font-weight: 700; }
+  .card-actions { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+  .pop-table, .stats-table { width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 11.5px; background: #F6F1E1; border: 1px solid #D6CBA8; border-radius: 8px; overflow: hidden; }
+  .pop-table th, .pop-table td, .stats-table th, .stats-table td { padding: 6px 3px; text-align: left; border-bottom: 1px solid #E4DCC4; }
+  .stats-table th, .stats-table td { font-size: 10.5px; }
+  .pop-table th, .stats-table th { background: #DED2AE; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: #4A4433; }
+  .pop-table td.num, .stats-table td.num { text-align: center; }
+  .pop-low { color: #C9622C; font-weight: 700; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+
+  /* BOTTOM NAV */
+  #bottomnav { flex: 0 0 auto; display: flex; background: #24432E; padding: 5px 0 max(5px, env(safe-area-inset-bottom)); }
+  .navbtn { flex: 1; background: none; border: none; color: #A9C0A0; display: flex; flex-direction: column; align-items: center; gap: 1px; font-family: sans-serif; font-size: 10px; padding: 5px 0 2px; position: relative; cursor: pointer; }
+  .navbtn.active { color: #fff; }
+  .navbtn .navicon { font-size: 21px; }
+  .navbtn .badge { position: absolute; top: -2px; right: 22%; background: #C9622C; color: #fff; font-size: 9px; border-radius: 8px; padding: 0 4px; font-weight: 700; line-height: 14px; }
+
+  #overlay { position: fixed; inset: 0; background: rgba(20,20,15,0.5); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+  #overlay.show { display: flex; }
+  #overlay .box { background: #F6F1E1; border-radius: 12px; padding: 20px; max-width: 400px; font-family: sans-serif; font-size: 13px; line-height: 1.6; color: #3A3527; position: relative; max-height: 80vh; overflow-y: auto; }
+  #overlay .close { position: absolute; top: 8px; right: 8px; background: none; border: none; font-size: 16px; cursor: pointer; }
+  #overlay h3 { font-family: Georgia, serif; font-weight: 700; font-size: 16px; margin: 0 0 8px; }
+  #overlay p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="topbar">
+    <div class="title">Wild Portfolio</div>
+    <div class="pill plant">🌿 <span id="plantCount">18</span></div>
+    <div class="pill meat">🥩 <span id="meatCount">10</span></div>
+    <div class="pill legacy">🏆 <span id="legacyCount">0</span></div>
+    <div class="pill" id="playerPill" style="background:#3A5A40;border:1px solid #5A7A60;color:#DCE7CB;cursor:pointer;" title="Switch player" onclick="showPlayerLogin()">👤 <span id="playerNameLabel">—</span></div>
+    <button class="btn infoBtn" onclick="document.getElementById('overlay').classList.add('show')">?</button>
+  </div>
+
+  <div id="screens">
+
+    <div class="screen active" id="screen-map">
+      <div id="canvasWrap">
+        <canvas id="game"></canvas>
+        <div id="mapHint">Drag anywhere to walk. Reach a plant or animal and you'll be asked what to do.</div>
+        <div id="mapLog"></div>
+        <div id="interactPrompt" class="interact-prompt">
+          <div class="prompt-text" id="interactPromptText"></div>
+          <div class="interact-actions">
+            <button class="btn" id="interactYesBtn" style="background:#5C8A4A;">Capture</button>
+            <button class="btn" id="interactNoBtn" style="background:#8A8265;">Leave it</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-captivity">
+      <div class="tabbar">
+        <button class="tabbtn active" id="tab-btn-wild" onclick="showTab('wild')">Wild population</button>
+        <button class="tabbtn" id="tab-btn-portfolio" onclick="showTab('portfolio')">Your portfolio (<span id="portfolioCount">0</span>)</button>
+      </div>
+      <div class="tabcontent">
+        <div class="tabpane active" id="tab-wild">
+          <div class="section-label">Wild population</div>
+          <table class="pop-table" id="popTable"></table>
+        </div>
+        <div class="tabpane" id="tab-portfolio">
+          <div class="section-label">Captured — feed, convert, release, or send to zoo</div>
+          <div id="emptyNote" class="empty-note">Nothing captured yet. Go to the Map and find an animal.</div>
+          <div id="portfolio"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-zoo">
+      <div class="section-label">Player stats</div>
+      <table class="stats-table" id="statsTable"></table>
+      <div class="section-label">Your zoo — <span id="zooUsage">0 / 3</span> cages · one individual per species</div>
+      <div id="zoo"></div>
+      <div id="zooProgress" class="empty-note"></div>
+    </div>
+
+  </div>
+
+  <div id="bottomnav">
+    <button class="navbtn active" id="nav-map" onclick="showScreen('map')">
+      <span class="navicon">🗺️</span><span>Map</span>
+    </button>
+    <button class="navbtn" id="nav-captivity" onclick="showScreen('captivity')">
+      <span class="navicon">🐾</span><span>Captivity</span>
+      <span class="badge" id="badge-captivity" style="display:none;">0</span>
+    </button>
+    <button class="navbtn" id="nav-zoo" onclick="showScreen('zoo')">
+      <span class="navicon">🏛️</span><span>Zoo</span>
+      <span class="badge" id="badge-zoo" style="display:none;">0</span>
+    </button>
+  </div>
+</div>
+
+<div id="playerLogin" style="position:fixed;inset:0;background:rgba(20,20,15,0.75);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100;">
+  <div class="box" style="max-width:360px;width:100%;">
+    <h3>Who is playing?</h3>
+    <p style="margin-bottom:12px;">Enter a player name. Progress is saved on the server so it survives closing the tab. Multiple people can each have their own save.</p>
+    <input id="playerNameInput" type="text" maxlength="24" placeholder="Your name" style="width:100%;padding:10px 12px;border:1px solid #D6CBA8;border-radius:8px;font-size:15px;font-family:sans-serif;margin-bottom:10px;background:#fff;" />
+    <div id="playerList" style="max-height:140px;overflow-y:auto;margin-bottom:12px;font-size:12px;"></div>
+    <button class="btn" style="background:#2F5D3F;width:100%;padding:12px;font-size:14px;" onclick="confirmPlayerLogin()">Continue</button>
+    <p id="loginStatus" style="margin-top:10px;font-size:11px;color:#7A7460;text-align:center;"></p>
+  </div>
+</div>
+
+<div id="overlay" onclick="if(event.target===this) this.classList.remove('show')">
+  <div class="box">
+    <button class="close" onclick="document.getElementById('overlay').classList.remove('show')">✕</button>
+    <h3>How this prototype works</h3>
+    <p><b>Map</b> — drag anywhere to walk. Reaching a plant or animal opens a prompt asking whether to harvest/capture it or leave it — nothing happens automatically. The map is large; rarer animals are genuinely hard to find.</p>
+    <p><b>Captivity</b> — "Wild population" shows every species' numbers in the wild. "Your portfolio" is where captured animals live: feed, convert, release, or send a trusted one to the zoo.</p>
+    <p><b>Feeding is gated</b> to 50% hunger or below. Trust starts to decline at 25% hunger or below.</p>
+    <p><b>Legacy value</b> is rarity plus how costly the animal is to acquire and raise. It only counts once an animal is secured in the zoo — a held animal shows its potential value, not yet added to your total.</p>
+    <p><b>Zoo</b> — 3 free cages, unlocking to 5 at 300 secured Legacy and 7 at 500. Only one individual of each species can be in the zoo at a time.</p>
+    <p><b>Releasing from the zoo</b> is allowed — it frees the cage and drops that Legacy from your total, but immediately doubles that species' trust requirement. The next one you secure will need far more trust, but will be worth proportionally more Legacy. Releasing from your portfolio (before zoo) instead raises trust by 25%, compounding per release.</p>
+    <p><b>Convert</b> turns a trusted herbivore/omnivore into meat and permanently lowers its wild population.</p>
+    <p style="opacity:0.7; font-style:italic;">Terrain is illustrative artwork, not a real map. Timings are compressed and approximate for testing.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var RARITY_COLOR = { common: "#5C8A4A", rare: "#5C6B9F", endangered: "#C9622C" };
+  var RARITY_BASE = { common: 10, rare: 40, endangered: 100 };
+  var PORTFOLIO_RELEASE_ESCALATION = 1.25;
+  var ZOO_RELEASE_ESCALATION = 2.0;
+  var FEED_ALLOWED_MAX_HUNGER = 50;
+  var HUNGER_PENALTY_THRESHOLD = 25;
+  var ZOO_TIERS = [{ threshold: 0, slots: 3 }, { threshold: 300, slots: 5 }, { threshold: 500, slots: 7 }];
+
+  var SPECIES = {
+    deer:        { name: "Chital Deer",         diet: "herbivore", rarity: "common",     hungerDurationMin: 1.0,  feedsNeeded: 6,  plantFeedCost: 8,  meatFeedCost: null, meatYield: 20, icon: "🦌", initialPop: 16, maxNodes: 4, regenSec: 8  },
+    blackbuck:   { name: "Blackbuck",            diet: "herbivore", rarity: "common",     hungerDurationMin: 1.0,  feedsNeeded: 6,  plantFeedCost: 7,  meatFeedCost: null, meatYield: 17, icon: "🦌", initialPop: 14, maxNodes: 4, regenSec: 9  },
+    nilgai:      { name: "Nilgai",                diet: "herbivore", rarity: "common",     hungerDurationMin: 1.1,  feedsNeeded: 6,  plantFeedCost: 14, meatFeedCost: null, meatYield: 34, icon: "🐂", initialPop: 12, maxNodes: 3, regenSec: 10 },
+    boar:        { name: "Wild Boar",            diet: "omnivore",  rarity: "common",     hungerDurationMin: 1.2,  feedsNeeded: 7,  plantFeedCost: 10, meatFeedCost: 6,   meatYield: 24, icon: "🐗", initialPop: 14, maxNodes: 4, regenSec: 10 },
+    peafowl:     { name: "Indian Peafowl",       diet: "omnivore",  rarity: "common",     hungerDurationMin: 0.6,  feedsNeeded: 5,  plantFeedCost: 5,  meatFeedCost: 3,   meatYield: 10, icon: "🦚", initialPop: 12, maxNodes: 4, regenSec: 7  },
+    hare:        { name: "Indian Hare",          diet: "herbivore", rarity: "common",     hungerDurationMin: 0.5,  feedsNeeded: 5,  plantFeedCost: 4,  meatFeedCost: null, meatYield: 8,  icon: "🐇", initialPop: 12, maxNodes: 4, regenSec: 6  },
+    langur:      { name: "Common Langur",        diet: "omnivore",  rarity: "common",     hungerDurationMin: 0.8,  feedsNeeded: 6,  plantFeedCost: 6,  meatFeedCost: 4,   meatYield: 14, icon: "🐒", initialPop: 12, maxNodes: 3, regenSec: 9  },
+    jackal:      { name: "Golden Jackal",        diet: "carnivore", rarity: "common",     hungerDurationMin: 1.5,  feedsNeeded: 6,  plantFeedCost: null, meatFeedCost: 7, meatYield: 16, icon: "🐕", initialPop: 10, maxNodes: 3, regenSec: 12 },
+    fox:         { name: "Indian Fox",           diet: "carnivore", rarity: "common",     hungerDurationMin: 1.3,  feedsNeeded: 5,  plantFeedCost: null, meatFeedCost: 5, meatYield: 11, icon: "🦊", initialPop: 10, maxNodes: 3, regenSec: 11 },
+    owlet:       { name: "Spotted Owlet",        diet: "carnivore", rarity: "common",     hungerDurationMin: 0.4,  feedsNeeded: 4,  plantFeedCost: null, meatFeedCost: 3, meatYield: 6,  icon: "🦉", initialPop: 12, maxNodes: 3, regenSec: 6  },
+
+    leopard:     { name: "Leopard",              diet: "carnivore", rarity: "rare",       hungerDurationMin: 5.0,  feedsNeeded: 9,  plantFeedCost: null, meatFeedCost: 12, meatYield: 32, icon: "🐆", initialPop: 8,  maxNodes: 2, regenSec: 22 },
+    sloth_bear:  { name: "Sloth Bear",           diet: "omnivore",  rarity: "rare",       hungerDurationMin: 3.0,  feedsNeeded: 8,  plantFeedCost: 13, meatFeedCost: 8,   meatYield: 34, icon: "🐻", initialPop: 7,  maxNodes: 2, regenSec: 20 },
+    wolf:        { name: "Indian Wolf",          diet: "carnivore", rarity: "rare",       hungerDurationMin: 4.0,  feedsNeeded: 8,  plantFeedCost: null, meatFeedCost: 11, meatYield: 30, icon: "🐺", initialPop: 6,  maxNodes: 2, regenSec: 24 },
+    hyena:       { name: "Striped Hyena",        diet: "carnivore", rarity: "rare",       hungerDurationMin: 3.5,  feedsNeeded: 7,  plantFeedCost: null, meatFeedCost: 9,  meatYield: 26, icon: "🐕", initialPop: 6,  maxNodes: 2, regenSec: 20 },
+    otter:       { name: "Smooth-coated Otter",  diet: "carnivore", rarity: "rare",       hungerDurationMin: 1.0,  feedsNeeded: 6,  plantFeedCost: null, meatFeedCost: 6,  meatYield: 15, icon: "🦦", initialPop: 8,  maxNodes: 2, regenSec: 16 },
+    python:      { name: "Indian Rock Python",   diet: "carnivore", rarity: "rare",       hungerDurationMin: 10.0, feedsNeeded: 6,  plantFeedCost: null, meatFeedCost: 10, meatYield: 24, icon: "🐍", initialPop: 6,  maxNodes: 2, regenSec: 26 },
+    barasingha:  { name: "Barasingha",           diet: "herbivore", rarity: "rare",       hungerDurationMin: 1.2,  feedsNeeded: 8,  plantFeedCost: 16, meatFeedCost: null, meatYield: 40, icon: "🦌", initialPop: 6,  maxNodes: 2, regenSec: 26 },
+    crocodile:   { name: "Mugger Crocodile",     diet: "carnivore", rarity: "rare",       hungerDurationMin: 12.0, feedsNeeded: 7,  plantFeedCost: null, meatFeedCost: 14, meatYield: 36, icon: "🐊", initialPop: 5,  maxNodes: 2, regenSec: 30 },
+
+    gaur:        { name: "Indian Gaur",          diet: "herbivore", rarity: "endangered", hungerDurationMin: 1.5,  feedsNeeded: 10, plantFeedCost: 30, meatFeedCost: null, meatYield: 78,  icon: "🐃", initialPop: 5, maxNodes: 2, regenSec: 38 },
+    elephant:    { name: "Asian Elephant",       diet: "herbivore", rarity: "endangered", hungerDurationMin: 1.5,  feedsNeeded: 11, plantFeedCost: 36, meatFeedCost: null, meatYield: 95,  icon: "🐘", initialPop: 5, maxNodes: 2, regenSec: 40 },
+    tiger:       { name: "Bengal Tiger",         diet: "carnivore", rarity: "endangered", hungerDurationMin: 9.0,  feedsNeeded: 9,  plantFeedCost: null, meatFeedCost: 18, meatYield: 52,  icon: "🐅", initialPop: 6, maxNodes: 2, regenSec: 45 },
+    cobra:       { name: "King Cobra",           diet: "carnivore", rarity: "endangered", hungerDurationMin: 14.0, feedsNeeded: 7,  plantFeedCost: null, meatFeedCost: 9,  meatYield: 22,  icon: "🐍", initialPop: 4, maxNodes: 1, regenSec: 50 },
+    lion:        { name: "Asiatic Lion",         diet: "carnivore", rarity: "endangered", hungerDurationMin: 8.0,  feedsNeeded: 10, plantFeedCost: null, meatFeedCost: 17, meatYield: 50,  icon: "🦁", initialPop: 4, maxNodes: 1, regenSec: 48 },
+    snow_leopard:{ name: "Snow Leopard",         diet: "carnivore", rarity: "endangered", hungerDurationMin: 6.0,  feedsNeeded: 9,  plantFeedCost: null, meatFeedCost: 13, meatYield: 34,  icon: "🐆", initialPop: 4, maxNodes: 1, regenSec: 46 },
+    bustard:     { name: "Great Indian Bustard", diet: "omnivore",  rarity: "endangered", hungerDurationMin: 1.0,  feedsNeeded: 6,  plantFeedCost: 9,  meatFeedCost: 5,   meatYield: 18,  icon: "🦃", initialPop: 3, maxNodes: 1, regenSec: 55 },
+    rhino:       { name: "One-horned Rhino",     diet: "herbivore", rarity: "endangered", hungerDurationMin: 1.6,  feedsNeeded: 12, plantFeedCost: 40, meatFeedCost: null, meatYield: 100, icon: "🦏", initialPop: 3, maxNodes: 1, regenSec: 55 },
+    pangolin:    { name: "Indian Pangolin",      diet: "carnivore", rarity: "endangered", hungerDurationMin: 4.0,  feedsNeeded: 7,  plantFeedCost: null, meatFeedCost: 8,  meatYield: 20,  icon: "🦔", initialPop: 4, maxNodes: 1, regenSec: 42 }
+  };
+  Object.keys(SPECIES).forEach(function (k) {
+    var s = SPECIES[k];
+    var costSum = (s.plantFeedCost || 0) + (s.meatFeedCost || 0);
+    s.points = RARITY_BASE[s.rarity] + costSum;
+    s.hungerRate = 100 / (s.hungerDurationMin * 60);
+    // Map is 10x bigger now — scale node availability up modestly (not proportionally to area)
+    // so density still drops sharply, especially for rare/endangered species (kept as-is = genuinely hard to find).
+    if (s.rarity === "common") s.maxNodes = s.maxNodes * 3;
+    else if (s.rarity === "rare") s.maxNodes = s.maxNodes * 2;
+  });
+
+  var PLANTS = {
+    grass: { icon: "🌱", yield: 2,   regrow: 8,  size: 16 },
+    shrub: { icon: "🌿", yield: 5,   regrow: 15, size: 20 },
+    tree:  { icon: "🌳", yield: 100, regrow: 70, size: 26 }
+  };
+
+  var WORLD = 16000; // 10x the previous 1600 — deliberately large so animals must be sought out
+  var HUNGER_MAX = 100, RELEASE_GRACE = 20;
+  var WALK_SPEED = 480;
+  var INTERACT_RADIUS = 24;
+  var nodeSeq = 0;
+  var DPR = Math.min(window.devicePixelRatio || 1, 3);
+
+  var canvasWrap = document.getElementById("canvasWrap");
+  var canvas = document.getElementById("game");
+  var ctx = canvas.getContext("2d");
+  var VIEW_W = 340, VIEW_H = 500;
+
+  function resizeCanvas() {
+    var rect = canvasWrap.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return;
+    VIEW_W = rect.width; VIEW_H = rect.height;
+    canvas.width = Math.round(VIEW_W * DPR);
+    canvas.height = Math.round(VIEW_H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("orientationchange", function () { setTimeout(resizeCanvas, 200); });
+
+  var state = {
+    player: { x: WORLD / 2 - 400, y: WORLD / 2 - 400 },
+    nodes: [],
+    population: {},
+    converted: {},
+    zooCounts: {},
+    inventory: { plant: 18, meat: 10 },
+    captured: [],
+    zoo: [],
+    releaseMultiplier: {},
+    activePrompt: null,
+    log: ["You step onto the trail near the river. The forest stretches out ahead."]
+  };
+
+  var currentScreen = "map";
+  var currentTab = "wild";
+  var SAVE_KEY = "wildPortfolio_v9";
+  var saveTimer = null;
+  var regenClocks = {};
+  Object.keys(SPECIES).forEach(function (k) { regenClocks[k] = 0; });
+  var tickCount = 0;
+  var playerName = "";
+  var serverOnline = false;
+  var API = ""; // same origin when served by our server
+
+  function buildPayload() {
+    return {
+      version: 1,
+      player: state.player,
+      nodes: state.nodes,
+      population: state.population,
+      converted: state.converted,
+      zooCounts: state.zooCounts,
+      inventory: state.inventory,
+      captured: state.captured,
+      zoo: state.zoo,
+      releaseMultiplier: state.releaseMultiplier,
+      log: state.log.slice(0, 6),
+      nodeSeq: nodeSeq,
+      rocks: rocks,
+      clusters: clusters,
+      blotches: blotches,
+      regenClocks: regenClocks
+    };
+  }
+
+  function applyPayload(data) {
+    if (!data || data.version !== 1) return false;
+    state.player = data.player || state.player;
+    state.nodes = data.nodes || [];
+    state.population = data.population || {};
+    state.converted = data.converted || {};
+    state.zooCounts = data.zooCounts || {};
+    state.inventory = data.inventory || { plant: 18, meat: 10 };
+    state.captured = data.captured || [];
+    state.zoo = data.zoo || [];
+    state.releaseMultiplier = data.releaseMultiplier || {};
+    state.log = data.log || state.log;
+    state.activePrompt = null;
+    if (typeof data.nodeSeq === "number") nodeSeq = data.nodeSeq;
+    if (data.rocks && data.rocks.length) rocks = data.rocks;
+    if (data.clusters && data.clusters.length) clusters = data.clusters;
+    if (data.blotches && data.blotches.length) blotches = data.blotches;
+    if (data.regenClocks) {
+      Object.keys(data.regenClocks).forEach(function (k) {
+        regenClocks[k] = data.regenClocks[k];
+      });
+    }
+    Object.keys(SPECIES).forEach(function (k) {
+      if (state.population[k] === undefined) state.population[k] = SPECIES[k].initialPop;
+      if (state.converted[k] === undefined) state.converted[k] = 0;
+      if (state.zooCounts[k] === undefined) state.zooCounts[k] = 0;
+      if (regenClocks[k] === undefined) regenClocks[k] = 0;
+    });
+    return true;
+  }
+
+  function saveState() {
+    if (!playerName) return;
+    var payload = buildPayload();
+    // Always keep a local backup keyed by player
+    try {
+      localStorage.setItem(SAVE_KEY + "_" + playerName, JSON.stringify(payload));
+      localStorage.setItem(SAVE_KEY + "_lastPlayer", playerName);
+    } catch (e) {
+      console.warn("Local save failed:", e);
+    }
+    // Server save when available
+    if (serverOnline) {
+      fetch(API + "/api/save/" + encodeURIComponent(playerName), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(function (e) {
+        console.warn("Server save failed:", e);
+      });
+    }
+  }
+
+  function loadStateFromLocal() {
+    try {
+      var raw = localStorage.getItem(SAVE_KEY + "_" + playerName);
+      if (!raw) return false;
+      return applyPayload(JSON.parse(raw));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function loadStateFromServer(cb) {
+    if (!serverOnline || !playerName) { cb(false); return; }
+    fetch(API + "/api/save/" + encodeURIComponent(playerName))
+      .then(function (r) {
+        if (!r.ok) throw new Error("no save");
+        return r.json();
+      })
+      .then(function (data) {
+        cb(applyPayload(data));
+      })
+      .catch(function () {
+        cb(false);
+      });
+  }
+
+  function scheduleSave() {
+    if (!playerName) return;
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 500);
+  }
+
+  function showPlayerLogin() {
+    document.getElementById("playerLogin").style.display = "flex";
+    var input = document.getElementById("playerNameInput");
+    input.value = playerName || "";
+    input.focus();
+    refreshPlayerList();
+  }
+
+  function refreshPlayerList() {
+    var el = document.getElementById("playerList");
+    if (!serverOnline) {
+      el.innerHTML = '<div style="color:#7A7460;font-style:italic;">Server offline — saves stay on this device only.</div>';
+      return;
+    }
+    fetch(API + "/api/players")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.players || !data.players.length) {
+          el.innerHTML = '<div style="color:#7A7460;">No other saves yet — you will be the first.</div>';
+          return;
+        }
+        el.innerHTML = data.players.map(function (p) {
+          var when = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : "";
+          return '<button class="btn" style="background:#E4DCC4;color:#2B2620;width:100%;margin-bottom:4px;text-align:left;padding:8px 10px;" onclick="document.getElementById(\'playerNameInput\').value=\'' + p.name.replace(/'/g, "") + '\'">' +
+            "👤 " + p.name + ' · 🏆 ' + (p.legacy || 0) + (when ? ' · ' + when : "") + "</button>";
+        }).join("");
+      })
+      .catch(function () {
+        el.innerHTML = "";
+      });
+  }
+
+  function confirmPlayerLogin() {
+    var name = (document.getElementById("playerNameInput").value || "").trim();
+    if (!name || name.length < 1) {
+      document.getElementById("loginStatus").textContent = "Enter a name to continue.";
+      return;
+    }
+    playerName = name.slice(0, 24);
+    document.getElementById("playerNameLabel").textContent = playerName;
+    document.getElementById("loginStatus").textContent = "Loading…";
+    try { localStorage.setItem(SAVE_KEY + "_lastPlayer", playerName); } catch (e) {}
+
+    function finish(loaded) {
+      if (!loaded) {
+        // fresh start for this player
+        var w = makeWorld();
+        state.player = { x: WORLD / 2 - 400, y: WORLD / 2 - 400 };
+        state.nodes = w.nodes;
+        state.population = w.population;
+        state.converted = w.converted;
+        state.zooCounts = w.zooCounts;
+        state.inventory = { plant: 18, meat: 10 };
+        state.captured = [];
+        state.zoo = [];
+        state.releaseMultiplier = {};
+        state.log = ["Welcome, " + playerName + ". The forest stretches out ahead."];
+        Object.keys(SPECIES).forEach(function (k) { regenClocks[k] = 0; });
+        generateTerrainFeatures();
+      } else {
+        pushLog("Progress restored for " + playerName + ".");
+      }
+      closePrompt();
+      renderInventory(); renderLog(); renderPortfolio(); renderZoo(); renderPopulation(); renderStats(); updateNavBadges();
+      document.getElementById("playerLogin").style.display = "none";
+      document.getElementById("loginStatus").textContent = "";
+      scheduleSave();
+    }
+
+    // Prefer server, fall back to local
+    if (serverOnline) {
+      loadStateFromServer(function (ok) {
+        if (ok) finish(true);
+        else finish(loadStateFromLocal());
+      });
+    } else {
+      finish(loadStateFromLocal());
+    }
+  }
+  window.confirmPlayerLogin = confirmPlayerLogin;
+  window.showPlayerLogin = showPlayerLogin;
+
+  // Enter key on name input
+  document.addEventListener("DOMContentLoaded", function () {
+    var inp = document.getElementById("playerNameInput");
+    if (inp) inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") confirmPlayerLogin();
+    });
+  });
+
+  function rand(min, max) { return min + Math.random() * (max - min); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function dist(ax, ay, bx, by) { var dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+  function getMultiplier(species) { return state.releaseMultiplier[species] || 1; }
+
+  function animalPointValue(a) {
+    var sp = SPECIES[a.species];
+    return Math.round(sp.points * a.pointMultiplier);
+  }
+  function zooLegacyTotal() {
+    var total = 0;
+    state.zoo.forEach(function (z) { total += z.points; });
+    return total;
+  }
+  function maxZooSlots() {
+    var legacy = zooLegacyTotal();
+    var slots = ZOO_TIERS[0].slots;
+    ZOO_TIERS.forEach(function (t) { if (legacy >= t.threshold) slots = t.slots; });
+    return slots;
+  }
+
+  // ---------- navigation ----------
+
+  function showScreen(name) {
+    currentScreen = name;
+    ["map", "captivity", "zoo"].forEach(function (s) {
+      document.getElementById("screen-" + s).classList.toggle("active", s === name);
+      document.getElementById("nav-" + s).classList.toggle("active", s === name);
+    });
+    if (name === "map") { requestAnimationFrame(resizeCanvas); }
+    if (name === "captivity") { renderPortfolio(); renderPopulation(); }
+    if (name === "zoo") { renderZoo(); renderStats(); }
+  }
+  window.showScreen = showScreen;
+
+  function showTab(name) {
+    currentTab = name;
+    ["wild", "portfolio"].forEach(function (t) {
+      document.getElementById("tab-" + t).classList.toggle("active", t === name);
+      document.getElementById("tab-btn-" + t).classList.toggle("active", t === name);
+    });
+  }
+  window.showTab = showTab;
+
+  function updateNavBadges() {
+    var capBadge = document.getElementById("badge-captivity");
+    if (state.captured.length > 0) { capBadge.style.display = "inline-block"; capBadge.textContent = state.captured.length; }
+    else capBadge.style.display = "none";
+    var zooBadge = document.getElementById("badge-zoo");
+    var slots = maxZooSlots();
+    if (state.zoo.length > 0) { zooBadge.style.display = "inline-block"; zooBadge.textContent = state.zoo.length + "/" + slots; }
+    else zooBadge.style.display = "none";
+  }
+
+  // ---------- terrain (drawn live each frame — no giant offscreen bitmap, so it scales to a huge world) ----------
+
+  var RIVER_PTS = [-320, 2080, 3520, 4480, 2560, 8320, 7360, 9760, 10880, 10880, 12160, 13280, 16320, 13920];
+  var PATH_PTS = [640, 15200, 5280, 13440, 4640, 7840, 9920, 6080, 13440, 4800, 13440, 2400, 15520, 640];
+
+  var rocks = [], clusters = [], blotches = [];
+  function generateTerrainFeatures() {
+    var i;
+    for (i = 0; i < 220; i++) rocks.push({ x: rand(40, WORLD - 40), y: rand(40, WORLD - 40), rw: rand(8, 14) });
+    for (i = 0; i < 480; i++) clusters.push({ x: rand(40, WORLD - 40), y: rand(40, WORLD - 40) });
+    for (i = 0; i < 300; i++) blotches.push({ x: rand(0, WORLD), y: rand(0, WORLD), br: rand(30, 90), light: Math.random() < 0.5 });
+  }
+
+  var dustTile = document.createElement("canvas");
+  var DUST_TILE_SIZE = 260;
+  dustTile.width = DUST_TILE_SIZE; dustTile.height = DUST_TILE_SIZE;
+  (function buildDustTile() {
+    var dctx = dustTile.getContext("2d");
+    for (var s = 0; s < 220; s++) {
+      dctx.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+      dctx.fillRect(rand(0, DUST_TILE_SIZE), rand(0, DUST_TILE_SIZE), rand(2, 4), rand(2, 4));
+    }
+  })();
+  var dustPattern = ctx.createPattern(dustTile, "repeat");
+
+  function inView(x, y, cam, margin) {
+    return x > cam.x - margin && x < cam.x + VIEW_W + margin && y > cam.y - margin && y < cam.y + VIEW_H + margin;
+  }
+
+  function drawTerrainLive(cam) {
+    var grad = ctx.createLinearGradient(0, 0, VIEW_W, VIEW_H);
+    grad.addColorStop(0, "#82AC5B");
+    grad.addColorStop(0.5, "#78A454");
+    grad.addColorStop(1, "#6E9C4C");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    ctx.save();
+    ctx.translate(-(((cam.x % DUST_TILE_SIZE) + DUST_TILE_SIZE) % DUST_TILE_SIZE), -(((cam.y % DUST_TILE_SIZE) + DUST_TILE_SIZE) % DUST_TILE_SIZE));
+    ctx.fillStyle = dustPattern;
+    ctx.fillRect(0, 0, VIEW_W + DUST_TILE_SIZE, VIEW_H + DUST_TILE_SIZE);
+    ctx.restore();
+
+    blotches.forEach(function (b) {
+      if (!inView(b.x, b.y, cam, b.br)) return;
+      var sx = b.x - cam.x, sy = b.y - cam.y;
+      var rg = ctx.createRadialGradient(sx, sy, 0, sx, sy, b.br);
+      rg.addColorStop(0, b.light ? "rgba(255,255,255,0.05)" : "rgba(20,40,10,0.05)");
+      rg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = rg;
+      ctx.beginPath(); ctx.arc(sx, sy, b.br, 0, Math.PI * 2); ctx.fill();
+    });
+
+    function strokePath(pts, widths, colors, dash) {
+      for (var li = 0; li < widths.length; li++) {
+        ctx.save();
+        ctx.translate(-cam.x, -cam.y);
+        ctx.strokeStyle = colors[li];
+        ctx.lineWidth = widths[li];
+        if (dash && li === dash.at) ctx.setLineDash(dash.pattern); else ctx.setLineDash([]);
+        ctx.globalAlpha = colors.length > 2 && li === 0 ? 0.4 : 1;
+        ctx.beginPath();
+        ctx.moveTo(pts[0], pts[1]);
+        ctx.bezierCurveTo(pts[2], pts[3], pts[4], pts[5], pts[6], pts[7]);
+        ctx.bezierCurveTo(pts[8], pts[9], pts[10], pts[11], pts[12], pts[13]);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    strokePath(RIVER_PTS, [58, 44, 5], ["#DBCB9C", "#5C97BC", "rgba(255,255,255,0.4)"]);
+    strokePath(PATH_PTS, [22, 15], ["#A88856", "#C7AC79"], { at: 1, pattern: [26, 16] });
+
+    rocks.forEach(function (r) {
+      if (!inView(r.x, r.y, cam, 20)) return;
+      var sx = r.x - cam.x, sy = r.y - cam.y, rw = r.rw;
+      ctx.fillStyle = "rgba(0,0,0,0.15)";
+      ctx.beginPath(); ctx.ellipse(sx + 2, sy + 3, rw, rw * 0.55, 0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#8F8B7E";
+      ctx.beginPath(); ctx.ellipse(sx, sy, rw, rw * 0.6, 0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.beginPath(); ctx.ellipse(sx - rw * 0.3, sy - rw * 0.3, rw * 0.35, rw * 0.2, 0.3, 0, Math.PI * 2); ctx.fill();
+    });
+
+    clusters.forEach(function (c) {
+      if (!inView(c.x, c.y, cam, 40)) return;
+      var sx = c.x - cam.x, sy = c.y - cam.y;
+      ctx.fillStyle = "rgba(10,25,5,0.18)";
+      ctx.beginPath(); ctx.ellipse(sx + 6, sy + 22, 34, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#375C2A";
+      ctx.beginPath(); ctx.arc(sx - 10, sy - 6, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx + 12, sy - 4, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx, sy + 8, 17, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#5C9047";
+      ctx.beginPath(); ctx.arc(sx - 7, sy - 12, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx + 8, sy - 8, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.beginPath(); ctx.arc(sx - 10, sy - 10, 6, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  // ---------- world / nodes ----------
+
+  function spawnAnimalNode(species) {
+    nodeSeq++;
+    return { id: "a_" + nodeSeq, kind: "animal", species: species, x: rand(60, WORLD - 60), y: rand(60, WORLD - 60), present: true, playerNear: false, jitter: rand(-0.08, 0.08), scaleJ: rand(0.92, 1.08) };
+  }
+  function spawnPlantNode(ptype) {
+    nodeSeq++;
+    return { id: "p_" + nodeSeq, kind: "plant", ptype: ptype, x: rand(60, WORLD - 60), y: rand(60, WORLD - 60), ready: true, cooldown: 0, playerNear: false, jitter: rand(-0.12, 0.12), scaleJ: rand(0.88, 1.12) };
+  }
+
+  function makeWorld() {
+    var nodes = [];
+    var i;
+    for (i = 0; i < 150; i++) nodes.push(spawnPlantNode("grass"));
+    for (i = 0; i < 110; i++) nodes.push(spawnPlantNode("shrub"));
+    for (i = 0; i < 80; i++) nodes.push(spawnPlantNode("tree"));
+
+    var population = {}, converted = {}, zooCounts = {};
+    Object.keys(SPECIES).forEach(function (k) {
+      population[k] = SPECIES[k].initialPop;
+      converted[k] = 0;
+      zooCounts[k] = 0;
+      var count = Math.min(SPECIES[k].maxNodes, population[k]);
+      for (i = 0; i < count; i++) nodes.push(spawnAnimalNode(k));
+    });
+    return { nodes: nodes, population: population, converted: converted, zooCounts: zooCounts };
+  }
+
+  function animalNodesOfSpecies(sp) {
+    return state.nodes.filter(function (n) { return n.kind === "animal" && n.species === sp && n.present; });
+  }
+
+  function pushLog(msg) {
+    state.log.unshift(msg);
+    state.log = state.log.slice(0, 6);
+    renderLog();
+  }
+
+  // ---------- interaction (consent prompt, not auto-trigger) ----------
+
+  var promptEl = document.getElementById("interactPrompt");
+  var promptTextEl = document.getElementById("interactPromptText");
+  var promptYesBtn = document.getElementById("interactYesBtn");
+  var promptNoBtn = document.getElementById("interactNoBtn");
+
+  function openPrompt(node) {
+    state.activePrompt = node;
+    if (node.kind === "plant") {
+      var p = PLANTS[node.ptype];
+      promptTextEl.textContent = "Harvest this " + node.ptype + "?";
+      promptYesBtn.textContent = "Harvest " + p.icon;
+    } else {
+      var sp = SPECIES[node.species];
+      promptTextEl.textContent = "Capture this " + sp.name + "?";
+      promptYesBtn.textContent = "Capture " + sp.icon;
+    }
+    promptEl.style.display = "flex";
+  }
+  function closePrompt() {
+    state.activePrompt = null;
+    promptEl.style.display = "none";
+  }
+  promptYesBtn.addEventListener("click", function () {
+    var node = state.activePrompt;
+    if (node) performInteract(node);
+    closePrompt();
+  });
+  promptNoBtn.addEventListener("click", function () {
+    closePrompt();
+  });
+
+  function performInteract(node) {
+    if (node.kind === "plant" && node.ready) {
+      var p = PLANTS[node.ptype];
+      state.inventory.plant += p.yield;
+      node.ready = false; node.cooldown = p.regrow;
+      pushLog("Gathered " + p.icon + " — +" + p.yield + " plant food.");
+      renderInventory();
+      scheduleSave();
+    } else if (node.kind === "animal" && node.present) {
+      var sp = SPECIES[node.species];
+      var multiplier = getMultiplier(node.species);
+      var feedsNeeded = Math.max(sp.feedsNeeded, Math.round(sp.feedsNeeded * multiplier));
+      state.captured.push({
+        uid: node.id + "_" + Date.now(), species: node.species, hunger: 70,
+        trust: 0, feedsNeeded: feedsNeeded, starvingFor: 0, tagged: multiplier > 1,
+        penalizedThisDip: false, pointMultiplier: multiplier
+      });
+      node.present = false;
+      state.population[node.species] = Math.max(0, state.population[node.species] - 1);
+      pushLog(sp.icon + " Captured a " + sp.name + (multiplier > 1 ? " (wary — trust needs " + feedsNeeded + " feeds this time)" : "") + ". Check Captivity to feed it.");
+      renderPortfolio(); renderPopulation(); renderStats(); updateNavBadges();
+      scheduleSave();
+    }
+  }
+
+  function checkProximity() {
+    if (state.activePrompt) return;
+    for (var i = 0; i < state.nodes.length; i++) {
+      var n = state.nodes[i];
+      var active = (n.kind === "plant" && n.ready) || (n.kind === "animal" && n.present);
+      if (!active) { n.playerNear = false; continue; }
+      var d = dist(state.player.x, state.player.y, n.x, n.y);
+      var near = d <= INTERACT_RADIUS;
+      if (near && !n.playerNear) { n.playerNear = near; openPrompt(n); break; }
+      n.playerNear = near;
+    }
+  }
+
+  // ---------- feed / convert / zoo / release ----------
+
+  function feedAnimal(uid, source) {
+    var target = state.captured.find(function (a) { return a.uid === uid; });
+    if (!target) return;
+    var sp = SPECIES[target.species];
+
+    if (target.hunger > FEED_ALLOWED_MAX_HUNGER) {
+      pushLog("The " + sp.name + " isn't hungry enough yet — feeding only works at 50% hunger or below.");
+      return;
+    }
+
+    var cost = source === "plant" ? sp.plantFeedCost : sp.meatFeedCost;
+    if (!cost) return;
+
+    if (source === "plant") {
+      if (state.inventory.plant < cost) { pushLog("Not enough plant food to feed the " + sp.name + "."); return; }
+      state.inventory.plant -= cost;
+    } else {
+      if (state.inventory.meat < cost) { pushLog("Not enough meat to feed the " + sp.name + "."); return; }
+      state.inventory.meat -= cost;
+    }
+
+    target.hunger = HUNGER_MAX;
+    target.starvingFor = 0;
+    target.penalizedThisDip = false;
+    target.trust = Math.min(target.feedsNeeded, target.trust + 1);
+    pushLog("Fed the " + sp.name + " " + source + " — full again. Trust: " + target.trust + " / " + target.feedsNeeded + " feeds.");
+    renderInventory(); renderPortfolio(); renderStats();
+    scheduleSave();
+  }
+
+  function convertToMeat(uid) {
+    var target = state.captured.find(function (a) { return a.uid === uid; });
+    if (!target) return;
+    var sp = SPECIES[target.species];
+    if (sp.diet === "carnivore") { pushLog("Carnivores can't be converted — they're not prey here."); return; }
+    if (target.trust < target.feedsNeeded) { pushLog("This " + sp.name + " hasn't fully trusted you yet."); return; }
+    state.inventory.meat += sp.meatYield;
+    state.converted[target.species] = (state.converted[target.species] || 0) + 1;
+    pushLog("You converted your trusted " + sp.name + " into " + sp.meatYield + " meat. Its wild population is permanently down one. It never earned any Legacy.");
+    state.captured = state.captured.filter(function (a) { return a.uid !== uid; });
+    renderInventory(); renderPortfolio(); renderPopulation(); renderStats(); updateNavBadges();
+    scheduleSave();
+  }
+
+  function sendToZoo(uid) {
+    var target = state.captured.find(function (a) { return a.uid === uid; });
+    if (!target) return;
+    var sp = SPECIES[target.species];
+    if (target.trust < target.feedsNeeded) { pushLog("This " + sp.name + " hasn't fully trusted you yet."); return; }
+    if (state.zoo.some(function (z) { return z.species === target.species; })) {
+      pushLog("Your zoo can only hold one " + sp.name + " at a time. Release the current one first to make room for this one.");
+      return;
+    }
+    if (state.zoo.length >= maxZooSlots()) {
+      pushLog("Your zoo is full (" + state.zoo.length + "/" + maxZooSlots() + " cages). Reach more secured Legacy to unlock further cages.");
+      return;
+    }
+    var lockedPoints = animalPointValue(target);
+    state.zoo.push({ species: target.species, points: lockedPoints, tagged: target.tagged });
+    state.zooCounts[target.species] = (state.zooCounts[target.species] || 0) + 1;
+    pushLog("You secured the " + sp.name + " in your zoo — " + lockedPoints + " Legacy now locked in for good.");
+    state.captured = state.captured.filter(function (a) { return a.uid !== uid; });
+    renderPortfolio(); renderZoo(); renderPopulation(); renderStats(); updateNavBadges();
+    scheduleSave();
+  }
+
+  function releaseAnimal(uid) {
+    var target = state.captured.find(function (a) { return a.uid === uid; });
+    if (!target) return;
+    var sp = SPECIES[target.species];
+    state.releaseMultiplier[target.species] = getMultiplier(target.species) * PORTFOLIO_RELEASE_ESCALATION;
+    state.population[target.species] += 1;
+    if (animalNodesOfSpecies(target.species).length < sp.maxNodes) state.nodes.push(spawnAnimalNode(target.species));
+    pushLog("You released the " + sp.name + " back to the wild. Trust will be 25% harder to earn next time.");
+    state.captured = state.captured.filter(function (a) { return a.uid !== uid; });
+    renderPortfolio(); renderPopulation(); renderStats(); updateNavBadges();
+    scheduleSave();
+  }
+
+  function releaseFromZoo(index) {
+    var entry = state.zoo[index];
+    if (!entry) return;
+    var sp = SPECIES[entry.species];
+    state.releaseMultiplier[entry.species] = getMultiplier(entry.species) * ZOO_RELEASE_ESCALATION;
+    state.zoo.splice(index, 1);
+    state.zooCounts[entry.species] = Math.max(0, (state.zooCounts[entry.species] || 0) - 1);
+    state.population[entry.species] += 1;
+    if (animalNodesOfSpecies(entry.species).length < sp.maxNodes) state.nodes.push(spawnAnimalNode(entry.species));
+    pushLog("You released your zoo'd " + sp.name + " back to the wild — its trust requirement has doubled, but the next one will be worth far more Legacy. You've lost " + entry.points + " secured Legacy for now.");
+    renderZoo(); renderPopulation(); renderStats(); updateNavBadges();
+    scheduleSave();
+  }
+  window.releaseFromZoo = releaseFromZoo;
+
+  function resetGame() {
+    if (playerName) {
+      try { localStorage.removeItem(SAVE_KEY + "_" + playerName); } catch (e) {}
+      if (serverOnline) {
+        fetch(API + "/api/save/" + encodeURIComponent(playerName), { method: "DELETE" }).catch(function () {});
+      }
+    }
+    var w = makeWorld();
+    state.player = { x: WORLD / 2 - 400, y: WORLD / 2 - 400 };
+    state.nodes = w.nodes;
+    state.population = w.population;
+    state.converted = w.converted;
+    state.zooCounts = w.zooCounts;
+    state.inventory = { plant: 18, meat: 10 };
+    state.captured = [];
+    state.zoo = [];
+    state.releaseMultiplier = {};
+    closePrompt();
+    state.log = ["A new stretch of forest opens ahead."];
+    Object.keys(SPECIES).forEach(function (k) { regenClocks[k] = 0; });
+    generateTerrainFeatures();
+    renderInventory(); renderLog(); renderPortfolio(); renderZoo(); renderPopulation(); renderStats(); updateNavBadges();
+    scheduleSave();
+  }
+  window.resetGame = resetGame;
+  window.feedAnimal = feedAnimal;
+  window.convertToMeat = convertToMeat;
+  window.sendToZoo = sendToZoo;
+  window.releaseAnimal = releaseAnimal;
+  window.saveState = saveState;
+
+  // ---------- rendering: UI ----------
+
+  function renderInventory() {
+    document.getElementById("plantCount").textContent = state.inventory.plant;
+    document.getElementById("meatCount").textContent = state.inventory.meat;
+  }
+
+  function renderLog() {
+    var log = document.getElementById("mapLog");
+    log.innerHTML = "";
+    state.log.forEach(function (l) {
+      var div = document.createElement("div");
+      div.textContent = l;
+      log.appendChild(div);
+    });
+  }
+
+  function renderStats() {
+    var potentialLegacy = 0, counts = { common: 0, rare: 0, endangered: 0 };
+    state.captured.forEach(function (a) {
+      potentialLegacy += animalPointValue(a);
+      counts[SPECIES[a.species].rarity] += 1;
+    });
+    var securedLegacy = zooLegacyTotal();
+    state.zoo.forEach(function (z) { counts[SPECIES[z.species].rarity] += 1; });
+
+    document.getElementById("legacyCount").textContent = securedLegacy;
+    var table = document.getElementById("statsTable");
+    table.innerHTML =
+      '<tr><th>Held</th><th>Zoo\'d</th><th>Com.</th><th>Rare</th><th>End.</th><th>Potential</th><th>Secured</th></tr>' +
+      '<tr><td class="num">' + state.captured.length + '</td>' +
+      '<td class="num">' + state.zoo.length + '</td>' +
+      '<td class="num"><span class="dot" style="background:' + RARITY_COLOR.common + '"></span>' + counts.common + '</td>' +
+      '<td class="num"><span class="dot" style="background:' + RARITY_COLOR.rare + '"></span>' + counts.rare + '</td>' +
+      '<td class="num"><span class="dot" style="background:' + RARITY_COLOR.endangered + '"></span>' + counts.endangered + '</td>' +
+      '<td class="num">' + potentialLegacy + '</td>' +
+      '<td class="num" style="font-weight:700;">' + securedLegacy + '</td></tr>' +
+      '<tr><td colspan="7" style="font-size:10px;color:#7A7460;font-weight:400;padding-top:2px;">Potential = held-animal value, not yet counted toward your total.</td></tr>';
+  }
+
+  function renderPopulation() {
+    var table = document.getElementById("popTable");
+    var rows = '<tr><th>Species</th><th class="num">Wild</th><th class="num">Held</th><th class="num">Zoo\'d</th><th class="num">Lost</th></tr>';
+    Object.keys(SPECIES).forEach(function (k) {
+      var sp = SPECIES[k];
+      var held = state.captured.filter(function (a) { return a.species === k; }).length;
+      var wild = state.population[k];
+      var lowClass = wild <= Math.ceil(sp.initialPop * 0.25) ? "pop-low" : "";
+      rows += '<tr><td><span class="dot" style="background:' + RARITY_COLOR[sp.rarity] + '"></span>' + sp.icon + ' ' + sp.name + '</td><td class="num ' + lowClass + '">' + wild + '/' + sp.initialPop + '</td><td class="num">' + held + '</td><td class="num">' + (state.zooCounts[k] || 0) + '</td><td class="num">' + (state.converted[k] || 0) + '</td></tr>';
+    });
+    table.innerHTML = rows;
+  }
+
+  function renderPortfolio() {
+    document.getElementById("portfolioCount").textContent = state.captured.length;
+    document.getElementById("emptyNote").style.display = state.captured.length === 0 ? "block" : "none";
+    var container = document.getElementById("portfolio");
+    container.innerHTML = "";
+    var slotsLeft = maxZooSlots() - state.zoo.length;
+    state.captured.forEach(function (a) {
+      var sp = SPECIES[a.species];
+      var trustPct = Math.min(100, Math.round((a.trust / a.feedsNeeded) * 100));
+      var isTrusted = a.trust >= a.feedsNeeded;
+      var hungerColor = a.hunger < 25 ? "#C9622C" : a.hunger < 60 ? "#C9A24B" : "#5C8A4A";
+      var canConvert = isTrusted && sp.diet !== "carnivore";
+      var alreadyInZoo = state.zoo.some(function (z) { return z.species === a.species; });
+      var canZoo = isTrusted && slotsLeft > 0 && !alreadyInZoo;
+      var pts = animalPointValue(a);
+      var feedGateOpen = a.hunger <= FEED_ALLOWED_MAX_HUNGER;
+
+      var feedBtns = "";
+      if (sp.plantFeedCost) feedBtns += '<button class="btn" style="background:#5C8A4A;" ' + (feedGateOpen ? '' : 'disabled') + ' onclick="feedAnimal(\'' + a.uid + '\',\'plant\')">Feed plant (' + sp.plantFeedCost + ')</button>';
+      if (sp.meatFeedCost) feedBtns += '<button class="btn" style="background:#7A4E2E;" ' + (feedGateOpen ? '' : 'disabled') + ' onclick="feedAnimal(\'' + a.uid + '\',\'meat\')">Feed meat (' + sp.meatFeedCost + ')</button>';
+
+      var zooLabel = alreadyInZoo ? "Already in zoo" : (isTrusted && slotsLeft <= 0 ? "Zoo full" : "Send to zoo");
+
+      var card = document.createElement("div");
+      card.className = "card";
+      card.style.borderLeftColor = RARITY_COLOR[sp.rarity];
+      card.innerHTML =
+        '<div class="card-top">' +
+          '<span class="card-icon">' + sp.icon + '</span>' +
+          '<div>' +
+            '<div class="card-name">' + sp.name + ' <span style="font-weight:400;color:#7A7460;">· would secure ' + pts + ' legacy</span>' + (a.tagged ? '<span class="tag">WARY</span>' : '') + '</div>' +
+            '<div class="card-meta">' + sp.diet + ' · ' + sp.rarity + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stat-label">Hunger ' + (feedGateOpen ? '' : '<span style="color:#9A9482;">(too full to feed — wait for it to drop to 50%)</span>') + '<div class="bar-bg"><div class="bar-fill" style="width:' + a.hunger + '%; background:' + hungerColor + ';"></div></div></div>' +
+        '<div class="stat-label">Trust — ' + a.trust + ' / ' + a.feedsNeeded + ' feeds ' + (isTrusted ? '<span class="earned">· earned</span>' : '') + '<div class="bar-bg"><div class="bar-fill" style="width:' + trustPct + '%; background:#5C6B9F;"></div></div></div>' +
+        '<div class="card-actions">' +
+          feedBtns +
+          '<button class="btn" style="background:' + (canZoo ? '#5C6B9F' : '#D6CBA8') + '; color:' + (canZoo ? '#fff' : '#8A8265') + ';" ' + (canZoo ? '' : 'disabled') + ' onclick="sendToZoo(\'' + a.uid + '\')">' + zooLabel + '</button>' +
+          '<button class="btn" style="background:' + (canConvert ? '#C9622C' : '#D6CBA8') + '; color:' + (canConvert ? '#fff' : '#8A8265') + ';" ' + (canConvert ? '' : 'disabled') + ' onclick="convertToMeat(\'' + a.uid + '\')">Convert → ' + sp.meatYield + ' meat</button>' +
+          '<button class="btn" style="background:#8A8265;" onclick="releaseAnimal(\'' + a.uid + '\')">Release</button>' +
+        '</div>';
+      container.appendChild(card);
+    });
+  }
+
+  function renderZoo() {
+    var maxSlots = maxZooSlots();
+    document.getElementById("zooUsage").textContent = state.zoo.length + " / " + maxSlots;
+    var container = document.getElementById("zoo");
+    container.innerHTML = "";
+
+    for (var i = 0; i < 7; i++) {
+      var cage = document.createElement("div");
+      if (i < state.zoo.length) {
+        var z = state.zoo[i];
+        var sp = SPECIES[z.species];
+        cage.className = "cage filled";
+        cage.style.borderLeftColor = RARITY_COLOR[sp.rarity];
+        cage.innerHTML =
+          '<span class="card-icon">' + sp.icon + '</span>' +
+          '<div style="flex:1;">' +
+            '<div class="card-name">' + sp.name + (z.tagged ? '<span class="zootag">HARD-WON</span>' : '') + '</div>' +
+            '<div class="card-meta">' + sp.rarity + ' · secured · ' + z.points + ' legacy</div>' +
+          '</div>' +
+          '<button class="btn" style="background:#8A8265; font-size:10px; padding:6px 8px;" onclick="releaseFromZoo(' + i + ')">Release</button>';
+      } else if (i < maxSlots) {
+        cage.className = "cage empty";
+        cage.textContent = "Empty cage — ready for a trusted animal.";
+      } else {
+        cage.className = "cage locked";
+        cage.textContent = "🔒 Locked — unlock at " + (i < 5 ? "300" : "500") + " secured Legacy.";
+      }
+      container.appendChild(cage);
+    }
+
+    var progNote = document.getElementById("zooProgress");
+    var legacy = zooLegacyTotal();
+    if (maxSlots < 7) {
+      var nextThreshold = maxSlots === 3 ? 300 : 500;
+      progNote.textContent = (nextThreshold - legacy > 0 ? (nextThreshold - legacy) + " more secured Legacy to unlock more cages." : "");
+    } else {
+      progNote.textContent = "All 7 cages unlocked — the cap for this prototype.";
+    }
+    updateNavBadges();
+  }
+
+  // ---------- rendering: canvas ----------
+
+  function getCamera() {
+    return { x: clamp(state.player.x - VIEW_W / 2, 0, Math.max(0, WORLD - VIEW_W)), y: clamp(state.player.y - VIEW_H / 2, 0, Math.max(0, WORLD - VIEW_H)) };
+  }
+
+  function drawShadow(sx, sy, size) {
+    ctx.beginPath();
+    ctx.ellipse(sx, sy + size * 0.32, size * 0.42, size * 0.16, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(10,15,5,0.25)";
+    ctx.fill();
+  }
+
+  function drawIcon(icon, sx, sy, size, rot, scaleJ) {
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(rot || 0);
+    ctx.scale(scaleJ || 1, scaleJ || 1);
+    ctx.font = size + "px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(icon, 0, 0);
+    ctx.restore();
+  }
+
+  var timeAcc = 0;
+  function drawScene(dt) {
+    timeAcc += dt;
+    var cam = getCamera();
+    ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+    drawTerrainLive(cam);
+
+    state.nodes.forEach(function (n) {
+      var sx = n.x - cam.x, sy = n.y - cam.y;
+      if (sx < -24 || sx > VIEW_W + 24 || sy < -24 || sy > VIEW_H + 24) return;
+      if (n.kind === "plant") {
+        var p = PLANTS[n.ptype];
+        ctx.globalAlpha = n.ready ? 1 : 0.35;
+        if (n.ready) drawShadow(sx, sy, p.size);
+        drawIcon(p.icon, sx, sy, p.size, n.jitter, n.scaleJ);
+        ctx.globalAlpha = 1;
+      } else if (n.kind === "animal" && n.present) {
+        drawShadow(sx, sy, 26);
+        drawIcon(SPECIES[n.species].icon, sx, sy, 26, n.jitter, n.scaleJ);
+      }
+    });
+
+    var px = state.player.x - cam.x, py = state.player.y - cam.y;
+    drawShadow(px, py, 24);
+    drawIcon("🧍", px, py - 1, 18, 0, 1);
+
+    if (drag.active) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = "#2B2620";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(drag.startX, drag.startY, 34, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(drag.startX + drag.nx * drag.mag, drag.startY + drag.ny * drag.mag, 13, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(43,38,32,0.55)"; ctx.fill();
+      ctx.restore();
+    }
+
+    var vg = ctx.createRadialGradient(VIEW_W/2, VIEW_H/2, Math.min(VIEW_W,VIEW_H)*0.35, VIEW_W/2, VIEW_H/2, Math.max(VIEW_W,VIEW_H)*0.72);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.18)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  }
+
+  // ---------- movement (direct drag, with velocity smoothing for a less twitchy feel) ----------
+
+  var moveVec = { x: 0, y: 0, active: false };
+  var velocity = { x: 0, y: 0 };
+  var drag = { active: false, pointerId: null, startX: 0, startY: 0, nx: 0, ny: 0, mag: 0 };
+  var MAX_DRAG = 50;
+  var SMOOTHING = 9;
+
+  function canvasCoordsFromEvent(e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = VIEW_W / rect.width, scaleY = VIEW_H / rect.height;
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  }
+
+  canvas.addEventListener("pointerdown", function (e) {
+    var p = canvasCoordsFromEvent(e);
+    drag.active = true; drag.pointerId = e.pointerId;
+    drag.startX = p.x; drag.startY = p.y; drag.nx = 0; drag.ny = 0; drag.mag = 0;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!drag.active || e.pointerId !== drag.pointerId) return;
+    var p = canvasCoordsFromEvent(e);
+    var dx = p.x - drag.startX, dy = p.y - drag.startY;
+    var mag = Math.sqrt(dx * dx + dy * dy);
+    var clamped = Math.min(mag, MAX_DRAG);
+    var nx = mag > 0 ? dx / mag : 0, ny = mag > 0 ? dy / mag : 0;
+    drag.nx = nx; drag.ny = ny; drag.mag = clamped;
+    moveVec.x = nx * (clamped / MAX_DRAG);
+    moveVec.y = ny * (clamped / MAX_DRAG);
+    moveVec.active = clamped > 3;
+  });
+  function endDrag(e) {
+    if (!drag.active || (e.pointerId !== undefined && e.pointerId !== drag.pointerId)) return;
+    drag.active = false; drag.mag = 0;
+    moveVec.x = 0; moveVec.y = 0; moveVec.active = false;
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+
+  // ---------- main loop ----------
+
+  var lastFrame = null;
+  function animate(ts) {
+    if (lastFrame === null) lastFrame = ts;
+    var dt = Math.min(0.1, (ts - lastFrame) / 1000);
+    lastFrame = ts;
+
+    if (currentScreen === "map") {
+      var frozen = !!state.activePrompt;
+      var targetX = (moveVec.active && !frozen) ? moveVec.x : 0;
+      var targetY = (moveVec.active && !frozen) ? moveVec.y : 0;
+      var lerp = Math.min(1, SMOOTHING * dt);
+      velocity.x += (targetX - velocity.x) * lerp;
+      velocity.y += (targetY - velocity.y) * lerp;
+
+      if (Math.abs(velocity.x) > 0.002 || Math.abs(velocity.y) > 0.002) {
+        state.player.x = clamp(state.player.x + velocity.x * WALK_SPEED * dt, 5, WORLD - 5);
+        state.player.y = clamp(state.player.y + velocity.y * WALK_SPEED * dt, 5, WORLD - 5);
+        if (!frozen) checkProximity();
+      }
+      drawScene(dt);
+    }
+    requestAnimationFrame(animate);
+  }
+
+  // ---------- game tick (1s): hunger, regrow, population regen ----------
+
+  setInterval(function () {
+    state.nodes.forEach(function (n) {
+      if (n.kind === "plant" && !n.ready) {
+        n.cooldown -= 1;
+        if (n.cooldown <= 0) { n.ready = true; n.cooldown = 0; }
+      }
+    });
+
+    var next = [];
+    state.captured.forEach(function (a) {
+      var sp = SPECIES[a.species];
+      var hunger = Math.max(0, a.hunger - sp.hungerRate);
+      var starvingFor = hunger === 0 ? (a.starvingFor || 0) + 1 : 0;
+      var trust = a.trust;
+      var penalizedThisDip = a.penalizedThisDip;
+
+      if (hunger <= HUNGER_PENALTY_THRESHOLD && !penalizedThisDip) {
+        trust = Math.max(0, trust - 1);
+        penalizedThisDip = true;
+        pushLog(sp.icon + " Your " + sp.name + " is getting very hungry — trust slipped a little.");
+      }
+      if (starvingFor >= RELEASE_GRACE) {
+        pushLog(sp.icon + " Your " + sp.name + " slipped away, hungry, back into the wild. Trust will be 25% harder next time.");
+        state.population[a.species] += 1;
+        state.releaseMultiplier[a.species] = getMultiplier(a.species) * PORTFOLIO_RELEASE_ESCALATION;
+        if (animalNodesOfSpecies(a.species).length < sp.maxNodes) state.nodes.push(spawnAnimalNode(a.species));
+        return;
+      }
+      a.hunger = hunger; a.trust = trust; a.starvingFor = starvingFor; a.penalizedThisDip = penalizedThisDip;
+      next.push(a);
+    });
+    state.captured = next;
+
+    Object.keys(SPECIES).forEach(function (k) {
+      var sp = SPECIES[k];
+      regenClocks[k] += 1;
+      if (regenClocks[k] >= sp.regenSec) {
+        regenClocks[k] = 0;
+        if (state.population[k] < sp.initialPop) {
+          state.population[k] += 1;
+          if (animalNodesOfSpecies(k).length < sp.maxNodes) state.nodes.push(spawnAnimalNode(k));
+        }
+      }
+    });
+
+    if (currentScreen === "captivity") { renderPortfolio(); renderPopulation(); }
+    renderStats();
+    updateNavBadges();
+    tickCount++;
+    if (tickCount % 5 === 0) scheduleSave(); // auto-save every 5 seconds
+  }, 1000);
+
+  // ---------- init ----------
+  generateTerrainFeatures();
+  // Start with empty world; real load happens after player picks a name
+  var w0 = makeWorld();
+  state.nodes = w0.nodes;
+  state.population = w0.population;
+  state.converted = w0.converted;
+  state.zooCounts = w0.zooCounts;
+  renderInventory(); renderLog(); renderPortfolio(); renderZoo(); renderPopulation(); renderStats(); updateNavBadges();
+  resizeCanvas();
+  requestAnimationFrame(animate);
+
+  setInterval(function () {
+    if (moveVec.active) scheduleSave();
+  }, 2000);
+
+  // Detect server + show login
+  fetch(API + "/api/health")
+    .then(function (r) { return r.json(); })
+    .then(function () {
+      serverOnline = true;
+      document.getElementById("loginStatus").textContent = "Server connected — progress will be saved online.";
+    })
+    .catch(function () {
+      serverOnline = false;
+      document.getElementById("loginStatus").textContent = "No server — progress saved on this device only.";
+    })
+    .finally(function () {
+      try {
+        var last = localStorage.getItem(SAVE_KEY + "_lastPlayer");
+        if (last) {
+          document.getElementById("playerNameInput").value = last;
+        }
+      } catch (e) {}
+      showPlayerLogin();
+    });
+})();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function (e) {
+        console.warn("SW register failed", e);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
