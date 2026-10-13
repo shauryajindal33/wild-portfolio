@@ -52,7 +52,7 @@ function send(res, status, data, type) {
 }
 
 function serveStatic(reqPath, res) {
-  let file = reqPath === "/" ? "/index.html" : reqPath;
+  let file = reqPath === "/" ? "index.html" : String(reqPath).replace(/^\/+/, "");
   file = path.normalize(file).replace(/^(\.\.[\/\\])+/, "");
   const full = path.join(PUBLIC_DIR, file);
   if (!full.startsWith(PUBLIC_DIR)) return send(res, 403, { error: "Forbidden" });
